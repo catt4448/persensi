@@ -1,15 +1,137 @@
-<h1>Dashboard Admin</h1>
+@extends('layouts.app')
 
-<p>Selamat datang di halaman dashboard admin.</p>
-<p>Di sini Anda dapat mengelola berbagai aspek aplikasi.</p>
-<p>Gunakan menu navigasi untuk mengakses fitur-fitur yang tersedia.</p>
-<p>Pastikan untuk selalu memperbarui informasi dan data sesuai kebutuhan.</p>
-<p>Jika Anda memerlukan bantuan, silakan hubungi tim dukungan teknis.</p>
-<p>Terima kasih telah menggunakan aplikasi kami!</p>
+@section('title', 'Dashboard Admin')
+@section('page-title', 'Dashboard Admin')
 
-<hr>
+@section('content')
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-speedometer2 me-2"></i>Selamat Datang, {{ auth()->user()->name }}!
+                </h5>
+                <p class="card-text text-muted">
+                    Ini adalah dashboard admin. Anda dapat mengelola semua aspek aplikasi dari sini.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 
-<form method="POST" action="{{ route('logout') }}">
-    @csrf
-    <button type="submit">Logout</button>
-</form>
+<!-- Stat Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-white-50 mb-2">Total Users</h6>
+                    <h2 class="mb-0">0</h2>
+                </div>
+                <div class="fs-1 opacity-50">
+                    <i class="bi bi-people"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card success">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-white-50 mb-2">Kehadiran Hari Ini</h6>
+                    <h2 class="mb-0">0</h2>
+                </div>
+                <div class="fs-1 opacity-50">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card warning">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-white-50 mb-2">Sesi Aktif</h6>
+                    <h2 class="mb-0">0</h2>
+                </div>
+                <div class="fs-1 opacity-50">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card info">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-white-50 mb-2">Total Laporan</h6>
+                    <h2 class="mb-0">0</h2>
+                </div>
+                <div class="fs-1 opacity-50">
+                    <i class="bi bi-file-text"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-activity me-2"></i>Aktivitas Terkini
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Aktivitas</th>
+                                <th>User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Belum ada aktivitas
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-2"></i>Tambah User
+                    </button>
+                    <button class="btn btn-outline-success">
+                        <i class="bi bi-calendar-plus me-2"></i>Buat Sesi Baru
+                    </button>
+                    <button class="btn btn-outline-info">
+                        <i class="bi bi-file-earmark-text me-2"></i>Generate Laporan
+                    </button>
+                    <button class="btn btn-outline-warning">
+                        <i class="bi bi-gear me-2"></i>Pengaturan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

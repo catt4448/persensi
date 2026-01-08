@@ -30,9 +30,9 @@ class AuthenticatedSessionController extends Controller
             $request->session()->regenerate();
 
             if (auth()->user()->role === 'admin') {
-                return redirect('/admin/dashboard');
+                return redirect()->route('admin.dashboard');
             }
-            return redirect('/user/dashboard');
+            return redirect()->route('user.dashboard');
         }
 
         return back()->withErrors([
@@ -49,6 +49,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login');
+        return redirect()->route('login');
     }
 }

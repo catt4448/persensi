@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
 class RegisteredUserController extends Controller
@@ -34,17 +33,14 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'role' => 'user', // set role sebagai 'user'
         ]);
-        
 
-        // event(new Registered($user));
+        event(new Registered($user));
 
-        // // ⛔ OPSI 1: langsung login
-        // Auth::login($user);
+        Auth::login($user);
 
-        // ✅ redirect ke dashboard
-       // return redirect('/user/dashboard');
+        return redirect()->route('user.dashboard')->with('success', 'Registrasi berhasil! Selamat datang.');
     }
 }

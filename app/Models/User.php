@@ -25,6 +25,34 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * Mutator untuk hash password saat di-assign
+     */
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = \Illuminate\Support\Facades\Hash::make($value);
+    }
+
+    /**
+     * Cek apakah user adalah admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Cek apakah user adalah user biasa
+     */
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
+    }
+
     /**
      * Relasi ke tabel mahasiswa
      */

@@ -14,6 +14,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+// Simple API endpoint
+Route::get('/hello', function () {
+    return response()->json([
+        'message' => 'Hello World',
+        'status' => 'success',
+        'timestamp' => now()->toDateTimeString(),
+    ]);
+})->name('api.hello');
+
+// Authenticated API routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->name('api.user');
 });
