@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Sesi;
+use App\Models\Mahasiswa;
+use App\Models\Kehadiran;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
@@ -75,7 +77,8 @@ class SesiController extends Controller
                 ->where('status', 'aktif')
                 ->update(['status' => 'selesai']);
 
-            Sesi::create([
+            // Buat sesi baru
+            $sesi = Sesi::create([
                 'nama_sesi' => $request->nama_sesi,
                 'kelas' => strtoupper($request->kelas),
                 'tanggal' => $request->tanggal,
@@ -85,8 +88,20 @@ class SesiController extends Controller
                 'created_by' => auth()->id()
             ]);
 
+            // Auto-create kehadiran untuk semua mahasiswa di kelas ini dengan status 'alpha' (tidak hadir)
+            $mahasiswa = Mahasiswa::where('kelas', strtoupper($request->kelas))->get();
+            
+            foreach ($mahasiswa as $mhs) {
+                Kehadiran::create([
+                    'sesi_id' => $sesi->id,
+                    'mahasiswa_id' => $mhs->id,
+                    'status' => 'alpha', // Default: tidak hadir
+                    'waktu_hadir' => null
+                ]);
+            }
+
             return redirect()->route('admin.sesi.index')
-                ->with('success', 'Sesi presensi berhasil dibuat & diaktifkan');
+                ->with('success', 'Sesi presensi berhasil dibuat & diaktifkan. Kehadiran otomatis dibuat untuk ' . $mahasiswa->count() . ' mahasiswa.');
         } catch (\Exception $e) {
             return back()->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -158,13 +173,16 @@ class SesiController extends Controller
         try {
             // Cek apakah sesi sudah ada kehadiran
             if ($sesi->kehadiran()->count() > 0) {
-                return back()->with('error', 'Tidak dapat menghapus sesi yang sudah memiliki data kehadiran');
+                return redirect()->route('admin.sesi.index')
+                    ->with('error', 'Tidak dapat menghapus sesi yang sudah memiliki data kehadiran');
             }
 
             $sesi->delete();
-            return back()->with('success', 'Sesi berhasil dihapus');
+            return redirect()->route('admin.sesi.index')
+                ->with('success', 'Sesi berhasil dihapus');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus sesi: ' . $e->getMessage());
+            return redirect()->route('admin.sesi.index')
+                ->with('error', 'Gagal menghapus sesi: ' . $e->getMessage());
         }
     }
 
