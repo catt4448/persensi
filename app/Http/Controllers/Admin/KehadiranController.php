@@ -11,30 +11,58 @@ use Illuminate\Http\Request;
 
 class KehadiranController extends Controller
 {
+    private function upsertStatus(Sesi $sesi, Mahasiswa $mahasiswa, string $status)
+    {
+        if ($mahasiswa->kelas !== $sesi->kelas) {
+            throw new \RuntimeException('Mahasiswa tidak berada di kelas yang sama dengan sesi ini');
+        }
+
+        $kehadiran = Kehadiran::firstOrNew([
+            'sesi_id' => $sesi->id,
+            'mahasiswa_id' => $mahasiswa->id,
+        ]);
+
+        $kehadiran->status = $status;
+        if (in_array($status, ['hadir', 'terlambat'])) {
+            $kehadiran->waktu_hadir = $kehadiran->waktu_hadir ?? Carbon::now();
+        } else {
+            $kehadiran->waktu_hadir = null;
+        }
+        $kehadiran->save();
+    }
+
     public function index(Request $request, $sesi_id)
     {
         $sesi = Sesi::findOrFail($sesi_id);
-        $query = Kehadiran::with('mahasiswa')
-            ->where('sesi_id', $sesi_id);
+        $query = Mahasiswa::query()
+            ->where('kelas', $sesi->kelas)
+            ->leftJoin('kehadiran', function ($join) use ($sesi_id) {
+                $join->on('mahasiswa.id', '=', 'kehadiran.mahasiswa_id')
+                    ->where('kehadiran.sesi_id', $sesi_id);
+            });
 
         // Filter by status
         if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
+            $query->where('kehadiran.status', $request->status);
         }
 
         // Search by NIM or Nama
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->whereHas('mahasiswa', function($q) use ($search) {
-                $q->where('nim', 'like', "%{$search}%")
-                  ->orWhere('nama', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('mahasiswa.nim', 'like', "%{$search}%")
+                    ->orWhere('mahasiswa.nama', 'like', "%{$search}%");
             });
         }
 
         // Order by nama mahasiswa
-        $kehadiran = $query->join('mahasiswa', 'kehadiran.mahasiswa_id', '=', 'mahasiswa.id')
-            ->orderBy('mahasiswa.nama')
-            ->select('kehadiran.*')
+        $mahasiswaList = $query->orderBy('mahasiswa.nama')
+            ->select([
+                'mahasiswa.*',
+                'kehadiran.id as kehadiran_id',
+                'kehadiran.status as kehadiran_status',
+                'kehadiran.waktu_hadir as kehadiran_waktu_hadir',
+            ])
             ->paginate(20)
             ->withQueryString();
 
@@ -54,7 +82,7 @@ class KehadiranController extends Controller
 
         return view('admin.kehadiran.index', compact(
             'sesi',
-            'kehadiran',
+            'mahasiswaList',
             'allMahasiswa',
             'totalMahasiswa',
             'hadir',
@@ -106,7 +134,7 @@ class KehadiranController extends Controller
         }
     }
 
-    public function update(Request $request, Kehadiran $kehadiran)
+    public function update(Request $request, $sesi_id, $mahasiswa_id)
     {
         $request->validate([
             'status' => 'required|in:hadir,terlambat,izin,sakit,alpha'
@@ -116,18 +144,46 @@ class KehadiranController extends Controller
         ]);
 
         try {
-            // Update hanya status
-            $kehadiran->update([
-                'status' => $request->status,
-                // Jika status diubah jadi hadir/terlambat dan waktu_hadir belum ada, set waktu_hadir
-                'waktu_hadir' => in_array($request->status, ['hadir', 'terlambat']) && !$kehadiran->waktu_hadir 
-                    ? Carbon::now() 
-                    : $kehadiran->waktu_hadir,
-            ]);
+            $sesi = Sesi::findOrFail($sesi_id);
+            $mahasiswa = Mahasiswa::findOrFail($mahasiswa_id);
+
+            $this->upsertStatus($sesi, $mahasiswa, $request->status);
 
             return back()->with('success', 'Status kehadiran berhasil diperbarui');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal memperbarui status: ' . $e->getMessage());
+        }
+    }
+
+    public function bulkUpdate(Request $request, $sesi_id)
+    {
+        $request->validate([
+            'status' => 'array',
+            'status.*' => 'nullable|in:hadir,terlambat,izin,sakit,alpha',
+        ], [
+            'status.*.in' => 'Status tidak valid',
+        ]);
+
+        try {
+            $sesi = Sesi::findOrFail($sesi_id);
+            $statuses = $request->input('status', []);
+
+            foreach ($statuses as $mahasiswaId => $status) {
+                if (!$status) {
+                    continue;
+                }
+
+                $mahasiswa = Mahasiswa::find($mahasiswaId);
+                if (!$mahasiswa) {
+                    continue;
+                }
+
+                $this->upsertStatus($sesi, $mahasiswa, $status);
+            }
+
+            return back()->with('success', 'Perubahan kehadiran berhasil disimpan');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menyimpan perubahan: ' . $e->getMessage());
         }
     }
 }

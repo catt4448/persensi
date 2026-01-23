@@ -109,8 +109,8 @@
                 </form>
             </div>
             <div class="col-md-6">
-                <form method="GET" action="{{ route('admin.kehadiran.index', $sesi->id) }}" class="d-flex gap-2">
-                    <select name="status" class="form-select">
+                <form method="GET" action="{{ route('admin.kehadiran.index', $sesi->id) }}" class="d-flex gap-2 justify-content-end">
+                    <select name="status" class="form-select w-auto" style="min-width: 200px;">
                         <option value="">Semua Status</option>
                         <option value="hadir" {{ request('status') == 'hadir' ? 'selected' : '' }}>Hadir</option>
                         <option value="terlambat" {{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
@@ -131,112 +131,128 @@
         </div>
 
         <!-- Table -->
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover table-striped align-middle">
-                <thead class="table-dark">
-                    <tr class="text-center">
-                        <th style="width: 50px">No</th>
-                        <th>NIM</th>
-                        <th>Nama Mahasiswa</th>
-                        <th style="width: 150px">Waktu Hadir</th>
-                        <th style="width: 150px">Status</th>
-                        @if($sesi->status == 'aktif')
-                            <th style="width: 180px">Aksi</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($kehadiran as $k)
-                    <tr>
-                        <td class="text-center">{{ $kehadiran->firstItem() + $loop->index }}</td>
-                        <td>
-                            <span class="badge bg-info text-dark">{{ $k->mahasiswa->nim }}</span>
-                        </td>
-                        <td>
-                            <i class="bi bi-person-circle me-2 text-primary"></i>
-                            <strong>{{ $k->mahasiswa->nama }}</strong>
-                        </td>
-                        <td class="text-center">
-                            @if($k->waktu_hadir)
-                                <small>
-                                    <i class="bi bi-clock me-1"></i>
-                                    {{ \Carbon\Carbon::parse($k->waktu_hadir)->format('d/m/Y H:i') }}
-                                </small>
-                            @else
-                                <span class="text-muted">-</span>
+        <form action="{{ route('admin.kehadiran.bulkUpdate', $sesi->id) }}" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr class="text-center">
+                            <th style="width: 50px">No</th>
+                            <th>NIM</th>
+                            <th>Nama Mahasiswa</th>
+                            <th style="width: 150px">Waktu Hadir</th>
+                            <th style="width: 150px">Status</th>
+                            @if($sesi->status == 'aktif')
+                                <th style="width: 180px">Aksi</th>
                             @endif
-                        </td>
-                        <td class="text-center">
-                            @php
-                                $statusColors = [
-                                    'hadir' => 'success',
-                                    'terlambat' => 'warning',
-                                    'izin' => 'info',
-                                    'sakit' => 'primary',
-                                    'alpha' => 'danger'
-                                ];
-                                $statusIcons = [
-                                    'hadir' => 'check-circle',
-                                    'terlambat' => 'clock-history',
-                                    'izin' => 'envelope',
-                                    'sakit' => 'heart-pulse',
-                                    'alpha' => 'x-circle'
-                                ];
-                                $statusLabels = [
-                                    'hadir' => 'Hadir',
-                                    'terlambat' => 'Terlambat',
-                                    'izin' => 'Izin',
-                                    'sakit' => 'Sakit',
-                                    'alpha' => 'Alpha'
-                                ];
-                            @endphp
-                            <span class="badge bg-{{ $statusColors[$k->status] ?? 'secondary' }} fs-6">
-                                <i class="bi bi-{{ $statusIcons[$k->status] ?? 'circle' }} me-1"></i>
-                                {{ $statusLabels[$k->status] ?? ucfirst($k->status) }}
-                            </span>
-                        </td>
-                        @if($sesi->status == 'aktif')
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($mahasiswaList as $mhs)
+                        <tr>
+                            <td class="text-center">{{ $mahasiswaList->firstItem() + $loop->index }}</td>
                             <td>
-                                <form action="{{ route('admin.kehadiran.update', $k->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PUT')
+                                <span class="badge bg-info text-dark">{{ $mhs->nim }}</span>
+                            </td>
+                            <td>
+                                <i class="bi bi-person-circle me-2 text-primary"></i>
+                                <strong>{{ $mhs->nama }}</strong>
+                            </td>
+                            <td class="text-center">
+                                @if($mhs->kehadiran_waktu_hadir)
+                                    <small>
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ \Carbon\Carbon::parse($mhs->kehadiran_waktu_hadir)->format('d/m/Y H:i') }}
+                                    </small>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @php
+                                    $statusColors = [
+                                        'hadir' => 'success',
+                                        'terlambat' => 'warning',
+                                        'izin' => 'info',
+                                        'sakit' => 'primary',
+                                        'alpha' => 'danger'
+                                    ];
+                                    $statusIcons = [
+                                        'hadir' => 'check-circle',
+                                        'terlambat' => 'clock-history',
+                                        'izin' => 'envelope',
+                                        'sakit' => 'heart-pulse',
+                                        'alpha' => 'x-circle'
+                                    ];
+                                    $statusLabels = [
+                                        'hadir' => 'Hadir',
+                                        'terlambat' => 'Terlambat',
+                                        'izin' => 'Izin',
+                                        'sakit' => 'Sakit',
+                                        'alpha' => 'Alpha'
+                                    ];
+                                    $status = $mhs->kehadiran_status;
+                                @endphp
+                                @if($status)
+                                    <span class="badge bg-{{ $statusColors[$status] ?? 'secondary' }} fs-6">
+                                        <i class="bi bi-{{ $statusIcons[$status] ?? 'circle' }} me-1"></i>
+                                        {{ $statusLabels[$status] ?? ucfirst($status) }}
+                                    </span>
+                                @else
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="bi bi-circle me-1"></i>
+                                        Belum Diabsen
+                                    </span>
+                                @endif
+                            </td>
+                            @if($sesi->status == 'aktif')
+                                <td>
                                     <div class="d-flex gap-2 justify-content-center">
-                                        <select name="status" 
+                                        <select name="status[{{ $mhs->id }}]" 
                                                 class="form-select form-select-sm" 
-                                                style="width: auto;"
-                                                onchange="this.form.submit()">
-                                            <option value="hadir" {{ $k->status == 'hadir' ? 'selected' : '' }}>Hadir</option>
-                                            <option value="terlambat" {{ $k->status == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
-                                            <option value="izin" {{ $k->status == 'izin' ? 'selected' : '' }}>Izin</option>
-                                            <option value="sakit" {{ $k->status == 'sakit' ? 'selected' : '' }}>Sakit</option>
-                                            <option value="alpha" {{ $k->status == 'alpha' ? 'selected' : '' }}>Alpha</option>
+                                                style="width: auto;">
+                                            <option value="" {{ $status ? '' : 'selected' }}>Pilih status</option>
+                                            <option value="hadir" {{ $status == 'hadir' ? 'selected' : '' }}>Hadir</option>
+                                            <option value="terlambat" {{ $status == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
+                                            <option value="izin" {{ $status == 'izin' ? 'selected' : '' }}>Izin</option>
+                                            <option value="sakit" {{ $status == 'sakit' ? 'selected' : '' }}>Sakit</option>
+                                            <option value="alpha" {{ $status == 'alpha' ? 'selected' : '' }}>Alpha</option>
                                         </select>
                                     </div>
-                                </form>
+                                </td>
+                            @endif
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="{{ $sesi->status == 'aktif' ? '6' : '5' }}" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    <p class="mb-0">Tidak ada data kehadiran</p>
+                            @if(request('search') || request('status'))
+                                <small>Coba gunakan filter lain atau <a href="{{ route('admin.kehadiran.index', $sesi->id) }}">reset pencarian</a></small>
+                            @endif
+                                </div>
                             </td>
-                        @endif
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="{{ $sesi->status == 'aktif' ? '6' : '5' }}" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                <p class="mb-0">Tidak ada data kehadiran</p>
-                                @if(request('search') || request('status'))
-                                    <small>Coba gunakan filter lain atau <a href="{{ route('admin.kehadiran.index', $sesi->id) }}">reset pencarian</a></small>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if($sesi->status == 'aktif' && $mahasiswaList->count() > 0)
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Simpan Perubahan
+                    </button>
+                </div>
+            @endif
+        </form>
 
         <!-- Pagination -->
-        @if($kehadiran->hasPages())
+@if($mahasiswaList->hasPages())
         <div class="d-flex justify-content-center mt-4">
-            {{ $kehadiran->links() }}
+    {{ $mahasiswaList->links() }}
         </div>
         @endif
     </div>

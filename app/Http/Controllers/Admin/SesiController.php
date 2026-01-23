@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Sesi;
-use App\Models\Mahasiswa;
-use App\Models\Kehadiran;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
@@ -97,20 +95,8 @@ class SesiController extends Controller
                 'created_by' => auth()->id()
             ]);
 
-            // Auto-create kehadiran untuk semua mahasiswa di kelas ini dengan status 'alpha' (tidak hadir)
-            $mahasiswa = Mahasiswa::where('kelas', strtoupper($request->kelas))->get();
-            
-            foreach ($mahasiswa as $mhs) {
-                Kehadiran::create([
-                    'sesi_id' => $sesi->id,
-                    'mahasiswa_id' => $mhs->id,
-                    'status' => 'alpha', // Default: tidak hadir
-                    'waktu_hadir' => null
-                ]);
-            }
-
             return redirect()->route('admin.sesi.index')
-                ->with('success', 'Sesi presensi berhasil dibuat & diaktifkan. Kehadiran otomatis dibuat untuk ' . $mahasiswa->count() . ' mahasiswa.');
+                ->with('success', 'Sesi presensi berhasil dibuat & diaktifkan.');
         } catch (\Exception $e) {
             return back()->withInput()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -125,11 +111,21 @@ class SesiController extends Controller
 
     public function edit(Sesi $sesi)
     {
+        if ($sesi->status === 'selesai' || $this->isSesiExpired($sesi)) {
+            return redirect()->route('admin.sesi.index')
+                ->with('error', 'Sesi sudah selesai/melewati batas waktu dan tidak dapat diedit.');
+        }
+
         return view('admin.sesi.edit', compact('sesi'));
     }
 
     public function update(Request $request, Sesi $sesi)
     {
+        if ($sesi->status === 'selesai' || $this->isSesiExpired($sesi)) {
+            return redirect()->route('admin.sesi.index')
+                ->with('error', 'Sesi sudah selesai/melewati batas waktu dan tidak dapat diedit.');
+        }
+
         $request->validate([
             'nama_sesi' => 'required|string|max:255',
             'kelas' => 'required|string|max:2|min:1',
@@ -153,9 +149,14 @@ class SesiController extends Controller
         }
 
         try {
+            $kelasBaru = strtoupper($request->kelas);
+            if ($sesi->kelas !== $kelasBaru) {
+                $sesi->kehadiran()->delete();
+            }
+
             // Jika kelas berubah, nonaktifkan sesi aktif di kelas baru
-            if ($sesi->kelas !== strtoupper($request->kelas) && $sesi->status === 'aktif') {
-                Sesi::where('kelas', strtoupper($request->kelas))
+            if ($sesi->kelas !== $kelasBaru && $sesi->status === 'aktif') {
+                Sesi::where('kelas', $kelasBaru)
                     ->where('status', 'aktif')
                     ->where('id', '!=', $sesi->id)
                     ->update(['status' => 'selesai']);
@@ -163,7 +164,7 @@ class SesiController extends Controller
 
             $sesi->update([
                 'nama_sesi' => $request->nama_sesi,
-                'kelas' => strtoupper($request->kelas),
+                'kelas' => $kelasBaru,
                 'tanggal' => $request->tanggal,
                 'jam_mulai' => $request->jam_mulai,
                 'jam_selesai' => $request->jam_selesai,
@@ -180,6 +181,11 @@ class SesiController extends Controller
     public function destroy(Sesi $sesi)
     {
         try {
+            if ($sesi->status === 'selesai' || $this->isSesiExpired($sesi)) {
+                return redirect()->route('admin.sesi.index')
+                    ->with('error', 'Sesi sudah selesai/melewati batas waktu dan tidak dapat dihapus.');
+            }
+
             // Cek apakah sesi sudah ada kehadiran
             if ($sesi->kehadiran()->count() > 0) {
                 return redirect()->route('admin.sesi.index')
@@ -207,17 +213,27 @@ class SesiController extends Controller
     }
 
     private function autoCloseSesi()
-{
-    $now = Carbon::now();
+    {
+        $now = Carbon::now();
 
-    Sesi::where('status', 'aktif')
-        ->where(function ($q) use ($now) {
-            $q->whereDate('tanggal', '<', $now->toDateString())
-              ->orWhere(function ($q2) use ($now) {
-                  $q2->whereDate('tanggal', $now->toDateString())
-                     ->where('jam_selesai', '<=', $now->format('H:i:s'));
-              });
-        })
-        ->update(['status' => 'selesai']);
-}
+        Sesi::where('status', 'aktif')
+            ->where(function ($q) use ($now) {
+                $q->whereDate('tanggal', '<', $now->toDateString())
+                ->orWhere(function ($q2) use ($now) {
+                    $q2->whereDate('tanggal', $now->toDateString())
+                        ->where('jam_selesai', '<=', $now->format('H:i:s'));
+                });
+            })
+            ->update(['status' => 'selesai']);
+    }
+
+    private function isSesiExpired(Sesi $sesi): bool
+    {
+        $now = Carbon::now();
+        $tanggal = Carbon::parse($sesi->tanggal)->format('Y-m-d');
+        $jamSelesai = Carbon::parse($sesi->jam_selesai)->format('H:i:s');
+        $batas = Carbon::parse("{$tanggal} {$jamSelesai}");
+
+        return $batas->lessThanOrEqualTo($now);
+    }
 }

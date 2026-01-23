@@ -51,8 +51,33 @@ Aplikasi akan berjalan di `http://localhost:8000`
 
 ## Login
 
-- **Admin**: Buat akun admin melalui database atau seeder
+- **Admin**: Buat akun admin via command `php artisan user:create-admin`
 - **User**: Akun user dibuat otomatis saat menambahkan mahasiswa
+
+## Command: Buat Admin
+
+### Interaktif
+```bash
+php artisan user:create-admin
+```
+
+Catatan:
+- Jika email sudah ada, user akan dipromosikan jadi admin
+- Jika password kosong, sistem akan auto-generate dan menampilkannya
+
+## Task Scheduler (Auto Absen)
+
+Aplikasi memakai scheduler untuk mengisi otomatis status `alpha` bagi mahasiswa yang belum absen setelah sesi berakhir. Jalankan scheduler Laravel tiap 1 menit lewat cron.
+
+### Manual (jalanin sekali)
+```bash
+php artisan kehadiran:finalize-sesi
+```
+
+### Linux / macOS (cron)
+```bash
+* * * * * cd /path/ke/project && php artisan schedule:run >> /dev/null 2>&1
+```
 
 ## Fitur
 

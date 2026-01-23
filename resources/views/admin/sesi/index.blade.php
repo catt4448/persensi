@@ -94,6 +94,13 @@
                 </thead>
                 <tbody>
                     @forelse($sesi as $item)
+                    @php
+                        $now = \Carbon\Carbon::now();
+                        $tanggal = \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d');
+                        $jamSelesai = \Carbon\Carbon::parse($item->jam_selesai)->format('H:i:s');
+                        $batas = \Carbon\Carbon::parse("{$tanggal} {$jamSelesai}");
+                        $isExpired = $batas->lessThanOrEqualTo($now);
+                    @endphp
                     <tr>
                         <td class="text-center">{{ $sesi->firstItem() + $loop->index }}</td>
                         <td>
@@ -132,7 +139,7 @@
                                     <i class="bi bi-people me-1"></i>Kehadiran
                                 </a>
                                 
-                                @if($item->status == 'aktif')
+                                @if($item->status == 'aktif' && !$isExpired)
                                     <a href="{{ route('admin.sesi.edit', $item->id) }}"
                                        class="btn btn-sm btn-warning"
                                        title="Edit">
@@ -150,11 +157,9 @@
                                         </button>
                                     </form>
                                 @else
-                                    <a href="{{ route('admin.sesi.edit', $item->id) }}"
-                                       class="btn btn-sm btn-outline-secondary"
-                                       title="Edit">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>
                                         <i class="bi bi-pencil-square"></i>
-                                    </a>
+                                    </button>
                                 @endif
                             </div>
                         </td>

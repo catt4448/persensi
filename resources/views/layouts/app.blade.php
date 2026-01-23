@@ -274,13 +274,8 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-bar-chart"></i>
-                            <span>Laporan</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}"
+                           href="{{ route('admin.profile.edit') }}">
                             <i class="bi bi-gear"></i>
                             <span>Pengaturan</span>
                         </a>

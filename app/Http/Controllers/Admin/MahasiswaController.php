@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Mahasiswa;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Imports\MahasiswaImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -68,13 +70,15 @@ class MahasiswaController extends Controller
             ]);
 
             // Buat Mahasiswa
-            Mahasiswa::create([
+            $mahasiswa = Mahasiswa::create([
                 'user_id'  => $user->id,
                 'nim'      => $request->nim,
                 'nama'     => $request->nama,
                 'no_kartu' => $request->no_kartu,
                 'kelas'    => strtoupper($request->kelas),
             ]);
+
+            $this->insertMissingKehadiranRaw($mahasiswa->id, strtoupper($request->kelas));
 
             return redirect()->route('mahasiswa.index')
                 ->with('success', 'Mahasiswa & akun user berhasil ditambahkan');
@@ -106,12 +110,20 @@ class MahasiswaController extends Controller
         ]);
 
         try {
+            $kelasLama = $mahasiswa->kelas;
+            $kelasBaru = strtoupper($request->kelas);
+
             $mahasiswa->update([
                 'nim' => $request->nim,
                 'nama' => $request->nama,
                 'no_kartu' => $request->no_kartu,
-                'kelas' => strtoupper($request->kelas),
+                'kelas' => $kelasBaru,
             ]);
+
+            if ($kelasLama !== $kelasBaru) {
+                $this->deleteKehadiranByKelasRaw($mahasiswa->id, $kelasLama);
+                $this->insertMissingKehadiranRaw($mahasiswa->id, $kelasBaru);
+            }
 
             // Sinkronkan nama user
             if ($mahasiswa->user) {
@@ -163,5 +175,45 @@ class MahasiswaController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal mengimport data: ' . $e->getMessage());
         }
+    }
+
+    private function insertMissingKehadiranRaw(int $mahasiswaId, string $kelas): void
+    {
+        $now = Carbon::now();
+        $tanggal = $now->toDateString();
+        $jam = $now->format('H:i:s');
+        $timestamp = $now->toDateTimeString();
+
+        DB::statement(
+            'INSERT INTO kehadiran (sesi_id, mahasiswa_id, status, waktu_hadir, created_at, updated_at)
+             SELECT s.id, ?, "alpha", NULL, ?, ?
+             FROM sesi s
+             WHERE s.kelas = ?
+               AND (s.tanggal < ? OR (s.tanggal = ? AND s.jam_selesai <= ?))
+               AND NOT EXISTS (
+                   SELECT 1 FROM kehadiran k
+                   WHERE k.sesi_id = s.id AND k.mahasiswa_id = ?
+               )',
+            [
+                $mahasiswaId,
+                $timestamp,
+                $timestamp,
+                $kelas,
+                $tanggal,
+                $tanggal,
+                $jam,
+                $mahasiswaId,
+            ]
+        );
+    }
+
+    private function deleteKehadiranByKelasRaw(int $mahasiswaId, string $kelas): void
+    {
+        DB::statement(
+            'DELETE k FROM kehadiran k
+             INNER JOIN sesi s ON s.id = k.sesi_id
+             WHERE k.mahasiswa_id = ? AND s.kelas = ?',
+            [$mahasiswaId, $kelas]
+        );
     }
 }

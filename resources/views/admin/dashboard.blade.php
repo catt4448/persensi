@@ -123,12 +123,9 @@
                     <a href="{{ route('admin.sesi.create') }}" class="btn btn-outline-success">
                         <i class="bi bi-calendar-plus me-2"></i>Buat Sesi Baru
                     </a>
-                    <button class="btn btn-outline-info" disabled>
-                        <i class="bi bi-file-earmark-text me-2"></i>Generate Laporan
-                    </button>
-                    <button class="btn btn-outline-warning" disabled>
+                    <a href="{{ route('admin.profile.edit') }}" class="btn btn-outline-warning">
                         <i class="bi bi-gear me-2"></i>Pengaturan
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\MahasiswaController;
 use App\Http\Controllers\Admin\SesiController;
 use App\Http\Controllers\Admin\KehadiranController;
+use App\Http\Controllers\Admin\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -52,6 +53,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
             'totalSesi'
         ));
     })->name('dashboard');
+    Route::get('/pengaturan', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/pengaturan', [ProfileController::class, 'update'])->name('profile.update');
 });
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::resource('users', UserController::class);
@@ -74,8 +77,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('kehadiran.index');
     Route::post('/kehadiran', [KehadiranController::class, 'store'])
         ->name('kehadiran.store');
-    Route::put('/kehadiran/{kehadiran}', [KehadiranController::class, 'update'])
+    Route::put('/kehadiran/{sesi}/mahasiswa/{mahasiswa}', [KehadiranController::class, 'update'])
         ->name('kehadiran.update');
+    Route::put('/kehadiran/{sesi}/bulk', [KehadiranController::class, 'bulkUpdate'])
+        ->name('kehadiran.bulkUpdate');
 });
 
 
