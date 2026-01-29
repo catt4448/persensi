@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\MahasiswaController;
 use App\Http\Controllers\Admin\SesiController;
 use App\Http\Controllers\Admin\KehadiranController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\DeviceController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -58,6 +59,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 });
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::resource('users', UserController::class);
+});
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('devices', DeviceController::class);
 });
 Route::middleware(['auth','role:admin'])->prefix('admin')->group(function () {
     Route::get('/mahasiswa/export/pdf', [MahasiswaController::class, 'exportPdf'])->name('mahasiswa.exportPdf');

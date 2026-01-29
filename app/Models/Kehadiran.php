@@ -15,6 +15,7 @@ class Kehadiran extends Model
     protected $fillable = [
         'sesi_id',
         'mahasiswa_id',
+        'device_id',
         'waktu_hadir',
         'waktu_keluar',
         'status', // hadir, terlambat, izin, dll
@@ -39,5 +40,13 @@ class Kehadiran extends Model
     public function mahasiswa()
     {
         return $this->belongsTo(Mahasiswa::class);
+    }
+
+    /**
+     * Relasi ke Device
+     */
+    public function device()
+    {
+        return $this->belongsTo(Device::class);
     }
 }

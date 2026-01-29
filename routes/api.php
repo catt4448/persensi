@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AbsensiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,3 +30,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         return $request->user();
     })->name('api.user');
 });
+
+Route::post('/absensi/scan', [AbsensiController::class, 'scan'])
+    ->name('api.absensi.scan');

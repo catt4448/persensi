@@ -250,6 +250,13 @@
                                 <span>Data Mahasiswa</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.devices.*') ? 'active' : '' }}"
+                           href="{{ route('admin.devices.index') }}">
+                            <i class="bi bi-router"></i>
+                            <span>Perangkat</span>
+                        </a>
+                    </li>
                     <li class="nav-item has-submenu {{ request()->routeIs('admin.sesi.*') || request()->routeIs('admin.kehadiran.*') ? 'active' : '' }}">
                         <a class="nav-link has-submenu {{ request()->routeIs('admin.sesi.*') || request()->routeIs('admin.kehadiran.*') ? 'active' : '' }}" 
                            href="{{ route('admin.sesi.index') }}">
